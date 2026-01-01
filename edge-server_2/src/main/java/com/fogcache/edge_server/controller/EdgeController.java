@@ -15,6 +15,12 @@ public class EdgeController {
     private final CacheStore cache = new LFUCache(2);
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
+
+
     @GetMapping("/content")
     public String getContent(@RequestParam String id) {
 
