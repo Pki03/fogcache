@@ -2,6 +2,8 @@ package com.fogcache.edge_server.cache;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.HashMap;
+
 
 public class LRUCache implements CacheStore {
 
@@ -25,5 +27,10 @@ public class LRUCache implements CacheStore {
     @Override
     public synchronized void put(String key, String value) {
         cache.put(key, value);
+    }
+
+    @Override
+    public synchronized Map<String, String> snapshot() {
+        return new HashMap<>(cache);
     }
 }

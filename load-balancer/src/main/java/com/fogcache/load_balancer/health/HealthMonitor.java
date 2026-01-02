@@ -7,16 +7,15 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+
 
 @Component
 public class HealthMonitor {
 
     private final HashRing ring;
     private final RestTemplate restTemplate = new RestTemplate();
-
-    // Track consecutive failures
-    private final Map<String, Integer> failureCount = new ConcurrentHashMap<>();
-    private static final int MAX_FAILURES = 3;
+    private final Set<String> knownUp = ConcurrentHashMap.newKeySet();
 
     public HealthMonitor(HashRing ring) {
         this.ring = ring;
@@ -24,23 +23,46 @@ public class HealthMonitor {
 
     @Scheduled(fixedDelay = 3000)
     public void checkHealth() {
-        ring.getAllNodes().forEach(node -> {
+        for (String node : ring.getAllNodes()) {
             try {
                 restTemplate.getForObject(node + "/health", String.class);
 
-                // success → reset failure counter
-                failureCount.put(node, 0);
-                ring.markUp(node);
+                if (!knownUp.contains(node)) {
+                    System.out.println("Node UP -> " + node);
+                    ring.markUp(node);
+                    knownUp.add(node);
+                    warmupNode(node);
+                }
 
             } catch (Exception e) {
-                int fails = failureCount.getOrDefault(node, 0) + 1;
-                failureCount.put(node, fails);
-
-                if (fails >= MAX_FAILURES) {
-                    ring.markDown(node);
+                if (knownUp.contains(node)) {
                     System.out.println("Node DOWN -> " + node);
+                    ring.markDown(node);
+                    knownUp.remove(node);
                 }
             }
-        });
+        }
+    }
+
+    private void warmupNode(String recoveringNode) {
+        if (knownUp.isEmpty()) return;
+
+        String donor = knownUp.stream()
+                .filter(n -> !n.equals(recoveringNode))
+                .findFirst()
+                .orElse(null);
+
+        if (donor == null) return;
+
+        Map<String, String> snapshot =
+                restTemplate.getForObject(donor + "/dump", Map.class);
+
+        if (snapshot != null && !snapshot.isEmpty()) {
+            restTemplate.postForObject(
+                    recoveringNode + "/warmup",
+                    snapshot,
+                    String.class
+            );
+        }
     }
 }
