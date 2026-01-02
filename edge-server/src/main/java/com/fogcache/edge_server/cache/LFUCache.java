@@ -1,6 +1,9 @@
 package com.fogcache.edge_server.cache;
 
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class LFUCache implements CacheStore {
 
@@ -54,4 +57,11 @@ public class LFUCache implements CacheStore {
         values.remove(lfuKey);
         frequency.remove(lfuKey);
     }
+
+    @Override
+    public synchronized Map<String, String> snapshot() {
+        return new HashMap<>(values);
+    }
+
+
 }
