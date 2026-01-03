@@ -11,6 +11,12 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +56,16 @@ public class EdgeController {
         return "OK";
     }
 
+    @Autowired @Qualifier("requestPool")
+    private ExecutorService requestPool;
+
+    @Autowired @Qualifier("originPool")
+    private ExecutorService originPool;
+
+    @Autowired @Qualifier("replicationPool")
+    private ExecutorService replicationPool;
+
+
     @GetMapping("/dump")
     public Map<String, String> dump() {
         return cache.snapshot();
@@ -69,38 +85,43 @@ public class EdgeController {
     }
 
     @GetMapping("/content")
-    public ResponseEntity<String> getContent(@RequestParam String id,
-                                             HttpServletRequest request) {
+    public String getContent(@RequestParam String id, HttpServletRequest request) throws Exception {
 
-        // 🔒 Rate limiting (per key)
-        if (!rateLimiter.allowRequest(id)) {
-            System.out.println("RATE LIMITED -> " + id);
-            return ResponseEntity.status(429).body("Too Many Requests");
-        }
+        Future<String> future = requestPool.submit(() -> {
 
-        Object lock = locks.computeIfAbsent(id, k -> new Object());
-
-        synchronized (lock) {
-
-            String cached = cache.get(id);
-            if (cached != null) {
-                System.out.println("HIT -> " + id);
-
-                adaptiveManager.onAccess(CURRENT_NODE, id, cached);
-                return ResponseEntity.ok(cached);
+            if (!rateLimiter.allowRequest(id)) {
+                return "429: Too Many Requests";
             }
 
-            System.out.println("MISS -> " + id);
+            Object lock = locks.computeIfAbsent(id, k -> new Object());
 
-            String data = restTemplate.getForObject(
-                    "http://localhost:8081/content?id=" + id,
-                    String.class
-            );
+            synchronized (lock) {
 
-            cache.put(id, data);
-            adaptiveManager.onAccess(CURRENT_NODE, id, data);
+                String cached = cache.get(id);
+                if (cached != null) {
+                    adaptiveManager.onAccess(CURRENT_NODE, id, cached);
+                    return cached;
+                }
 
-            return ResponseEntity.ok(data);
-        }
+                Future<String> originFuture = originPool.submit(() ->
+                        restTemplate.getForObject(
+                                "http://localhost:8081/content?id=" + id, String.class
+                        )
+                );
+
+                String data = originFuture.get();
+
+                cache.put(id, data);
+
+                replicationPool.submit(() ->
+                        adaptiveManager.onAccess(CURRENT_NODE, id, data)
+                );
+
+                return data;
+            }
+        });
+
+        return future.get();
     }
+
 }
