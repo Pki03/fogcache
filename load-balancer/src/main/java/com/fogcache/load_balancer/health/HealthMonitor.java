@@ -57,7 +57,8 @@ public class HealthMonitor {
         Map<String, String> snapshot =
                 restTemplate.getForObject(donor + "/dump", Map.class);
 
-        if (snapshot != null && !snapshot.isEmpty()) {
+        if (snapshot != null && !snapshot.isEmpty())
+        {
             restTemplate.postForObject(
                     recoveringNode + "/warmup",
                     snapshot,
