@@ -16,8 +16,8 @@ public class TokenBucketRateLimiter {
 
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    private final double CAPACITY = 20;       // max requests
-    private final double REFILL_RATE = 10;    // per second
+    private final double CAPACITY = 1000;       // max requests
+    private final double REFILL_RATE = 1000;    // per second
 
     public synchronized boolean allowRequest(String key) {
         long now = System.nanoTime();
