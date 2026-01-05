@@ -1,6 +1,7 @@
 package com.fogcache.edge_server.admin;
 
 import com.fogcache.edge_server.metrics.HotKeyTracker;
+import com.fogcache.edge_server.replication.AdaptivePlacementEngine;
 import com.fogcache.edge_server.routing.RoutingService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,24 +16,33 @@ public class AdminController {
 
     private final RoutingService routingService;
     private final HotKeyTracker hotKeyTracker;
+    private final AdaptivePlacementEngine placementEngine;
 
     public AdminController(
             RoutingService routingService,
-            HotKeyTracker hotKeyTracker
+            HotKeyTracker hotKeyTracker,
+            AdaptivePlacementEngine placementEngine
     ) {
         this.routingService = routingService;
         this.hotKeyTracker = hotKeyTracker;
+        this.placementEngine = placementEngine;
     }
 
-    // ✅ Cluster view
+    // ✅ Cluster nodes
     @GetMapping("/nodes")
     public List<String> nodes() {
         return routingService.getHealthyNodes();
     }
 
-    // ✅ Hot key visibility (Day 22)
+    // ✅ Hot key visibility
     @GetMapping("/hotkeys")
     public Map<String, Integer> hotKeys() {
         return hotKeyTracker.snapshot();
+    }
+
+    // ✅ ML decision visibility (Day 22 Step 4)
+    @GetMapping("/ml/decisions")
+    public Map<String, String> mlDecisions() {
+        return placementEngine.decisionSnapshot();
     }
 }

@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 
 @Component
 public class AdaptivePlacementEngine {
@@ -80,5 +82,16 @@ public class AdaptivePlacementEngine {
                 // COLD → no replication
             }
         }
+    }
+
+
+    // Day 22: expose ML decisions (read-only)
+    public Map<String, String> decisionSnapshot() {
+        return decisionMemory.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().getLastClass()
+                ));
     }
 }
