@@ -1,26 +1,44 @@
 package com.fogcache.load_balancer.controller;
 
-import com.fogcache.load_balancer.hashing.HashRing;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.fogcache.load_balancer.cluster.NodeRegistry;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 public class LBController {
 
-    private final HashRing ring;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final NodeRegistry registry;
+    private final RestTemplate rest = new RestTemplate();
 
-    public LBController(HashRing ring) {
-        this.ring = ring;
-
-        ring.addNode("http://localhost:8082");
-        ring.addNode("http://localhost:8083");
+    public LBController(NodeRegistry registry) {
+        this.registry = registry;
     }
 
     @GetMapping("/content")
     public String route(@RequestParam String id) {
-        return restTemplate.getForObject(ring.getNode(id) + "/content?id=" + id, String.class);
+
+        List<String> nodes = registry.getHealthyNodes();
+
+        if (nodes.isEmpty()) {
+            throw new RuntimeException("No healthy nodes available");
+        }
+
+        for (String node : nodes) {
+            try {
+                return rest.getForObject(
+                        node + "/content?id=" + id,
+                        String.class
+                );
+            }
+            catch (Exception e) {
+                System.out.println("⚠️ Failed node: " + node + " — trying next...");
+                registry.markDown(node);
+            }
+        }
+
+        throw new RuntimeException("All nodes failed");
     }
 }

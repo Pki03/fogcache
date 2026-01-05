@@ -1,4 +1,4 @@
-package com.fogcache.edge_server.cluster;
+package com.fogcache.load_balancer.cluster;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,13 +17,12 @@ public class HealthMonitor {
     @Scheduled(fixedDelay = 3000)
     public void checkHealth() {
 
-        for (String node : registry.getNodes()) {
+        for (String node : registry.getAllNodes()) {
             try {
                 rest.getForObject(node + "/health", String.class);
-                System.out.println("🟢 Healthy: " + node);
+                registry.markUp(node);
             } catch (Exception e) {
-                System.out.println("🔴 Dead: " + node);
-                registry.remove(node);
+                registry.markDown(node);
             }
         }
     }

@@ -17,6 +17,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,7 @@ public class EdgeController {
 
     @Autowired
     private PatternAnalyzer analyzer;
+
 
     // ✅ Single constructor
     public EdgeController(ReplicationService replicationService,

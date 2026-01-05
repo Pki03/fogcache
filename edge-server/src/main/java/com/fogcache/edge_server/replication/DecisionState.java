@@ -1,6 +1,9 @@
+package com.fogcache.edge_server.replication;
+
 public class DecisionState {
+
     private String lastClass;   // HOT / WARM / COLD
-    private long lastUpdated;
+    private long lastUpdated;   // timestamp
 
     public DecisionState(String lastClass, long lastUpdated) {
         this.lastClass = lastClass;
