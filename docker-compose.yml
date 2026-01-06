@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  origin-server:
+    image: fogcache-origin
+    container_name: fogcache-origin
+    ports:
+      - "8081:8080"
+
+  edge-server:
+    image: fogcache-edge
+    container_name: fogcache-edge
+    ports:
+      - "8083:8080"
+    depends_on:
+      - origin-server

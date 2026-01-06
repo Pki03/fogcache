@@ -6,6 +6,8 @@ import com.fogcache.edge_server.cache.CacheStore;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
+
 
 import java.util.List;
 
@@ -15,6 +17,10 @@ public class PrefetchManager {
     private final PatternAnalyzer analyzer;
     private final CacheStore cache;
     private final RestTemplate rest = new RestTemplate();
+
+    @Value("${fogcache.origin.base-url}")
+    private String originBaseUrl;
+
 
     public PrefetchManager(PatternAnalyzer analyzer, CacheStore cache) {
         this.analyzer = analyzer;
@@ -30,7 +36,7 @@ public class PrefetchManager {
             if (shouldPrefetch(p) && cache.get(p.getKey()) == null) {
 
                 String data = rest.getForObject(
-                        "http://localhost:8081/content?id=" + p.getKey(),
+                        originBaseUrl + "/content?id=" + p.getKey(),
                         String.class
                 );
 

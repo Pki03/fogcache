@@ -10,6 +10,7 @@ import com.fogcache.edge_server.replication.AdaptiveReplicationManager;
 import com.fogcache.edge_server.replication.ReplicationRequest;
 import com.fogcache.edge_server.replication.ReplicationService;
 import com.fogcache.edge_server.ratelimit.TokenBucketRateLimiter;
+import org.springframework.beans.factory.annotation.Value;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,10 @@ public class EdgeController {
     @Autowired
     private PatternAnalyzer analyzer;
 
+    @Value("${fogcache.origin.base-url}")
+    private String originBaseUrl;
+
+
 
     // ✅ Single constructor
     public EdgeController(ReplicationService replicationService,
@@ -54,7 +59,7 @@ public class EdgeController {
 
 
         String port = env.getProperty("local.server.port", "8080");
-        this.CURRENT_NODE = "http://localhost:" + port;
+        this.CURRENT_NODE = "edge";
     }
 
     // ------------------- Utility Endpoints -------------------
@@ -116,7 +121,7 @@ public class EdgeController {
                         result = cached;
                     } else {
                         String data = restTemplate.getForObject(
-                                "http://localhost:8081/content?id=" + id,
+                                originBaseUrl + "/content?id=" + id,
                                 String.class
                         );
 
