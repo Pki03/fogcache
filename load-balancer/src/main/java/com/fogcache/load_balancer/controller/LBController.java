@@ -20,7 +20,11 @@ public class LBController {
     @GetMapping("/content")
     public String route(@RequestParam String id) {
 
+        System.out.println("🔵 [LB] Incoming request id=" + id);
+
         List<String> nodes = registry.getHealthyNodes();
+
+        System.out.println("📋 [LB] Healthy nodes = " + nodes);
 
         if (nodes.isEmpty()) {
             throw new RuntimeException("No healthy nodes available");
@@ -28,17 +32,24 @@ public class LBController {
 
         for (String node : nodes) {
             try {
-                return rest.getForObject(
+                System.out.println("🟢 [LB] Routing id=" + id + " to " + node);
+
+                String response = rest.getForObject(
                         node + "/content?id=" + id,
                         String.class
                 );
-            }
-            catch (Exception e) {
-                System.out.println("⚠️ Failed node: " + node + " — trying next...");
+
+                System.out.println("🟣 [LB] Success from " + node);
+
+                return response;
+
+            } catch (Exception e) {
+                System.out.println("⚠️ [LB] Failed node: " + node + " — marking DOWN");
                 registry.markDown(node);
             }
         }
 
         throw new RuntimeException("All nodes failed");
     }
+
 }

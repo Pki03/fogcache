@@ -2,6 +2,8 @@ package com.fogcache.edge_server.config;
 
 import com.fogcache.edge_server.cache.CacheStore;
 import com.fogcache.edge_server.cache.LRUCache;
+import com.fogcache.edge_server.cache.LFUCache;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,6 +12,6 @@ public class CacheConfig {
 
     @Bean
     public CacheStore cacheStore() {
-        return new LRUCache(100);
+        return new LRUCache(2);
     }
 }

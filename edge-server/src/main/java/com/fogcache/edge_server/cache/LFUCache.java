@@ -1,18 +1,12 @@
 package com.fogcache.edge_server.cache;
 
 import java.util.*;
-import java.util.HashMap;
-import java.util.Map;
-
 
 public class LFUCache implements CacheStore {
 
     private final int capacity;
 
-    // Stores actual data
     private final Map<String, String> values = new HashMap<>();
-
-    // Stores usage count
     private final Map<String, Integer> frequency = new HashMap<>();
 
     public LFUCache(int capacity) {
@@ -21,9 +15,13 @@ public class LFUCache implements CacheStore {
 
     @Override
     public synchronized String get(String key) {
-        if (!values.containsKey(key)) return null;
+        if (!values.containsKey(key)) {
+            System.out.println("[CACHE MISS] key=" + key);
+            return null;
+        }
 
         frequency.put(key, frequency.get(key) + 1);
+        System.out.println("[CACHE HIT] key=" + key + " freq=" + frequency.get(key));
         return values.get(key);
     }
 
@@ -34,6 +32,8 @@ public class LFUCache implements CacheStore {
         if (values.containsKey(key)) {
             values.put(key, value);
             frequency.put(key, frequency.get(key) + 1);
+            System.out.println("[CACHE PUT] key=" + key + " freq=" + frequency.get(key));
+            logState();
             return;
         }
 
@@ -43,6 +43,8 @@ public class LFUCache implements CacheStore {
 
         values.put(key, value);
         frequency.put(key, 1);
+        System.out.println("[CACHE PUT] key=" + key + " freq=1");
+        logState();
     }
 
     private void evictLFU() {
@@ -51,17 +53,18 @@ public class LFUCache implements CacheStore {
                 Map.Entry.comparingByValue()
         ).getKey();
 
-        System.out.println("EVICTING -> " + lfuKey);
-
+        System.out.println("[CACHE EVICT] key=" + lfuKey);
 
         values.remove(lfuKey);
         frequency.remove(lfuKey);
+    }
+
+    private void logState() {
+        System.out.println("[CACHE STATE] " + values.keySet());
     }
 
     @Override
     public synchronized Map<String, String> snapshot() {
         return new HashMap<>(values);
     }
-
-
 }
