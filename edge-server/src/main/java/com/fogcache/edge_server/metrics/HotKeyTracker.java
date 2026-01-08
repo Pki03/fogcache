@@ -31,4 +31,10 @@ public class HotKeyTracker {
         counter.forEach((k, v) -> snap.put(k, v.get()));
         return snap;
     }
+
+    public boolean isHot(String key) {
+        AtomicInteger count = counter.get(key);
+        return count != null && count.get() >= HOT_THRESHOLD;
+    }
+
 }

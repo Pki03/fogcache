@@ -1,5 +1,6 @@
 package com.fogcache.edge_server.prefetch;
 
+import com.fogcache.edge_server.cache.CacheStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PrefetchEngine {
 
     private final RestTemplate rest = new RestTemplate();
+    private final CacheStore cache;
 
     @Value("${fogcache.origin.base-url}")
     private String originBaseUrl;
@@ -25,6 +27,11 @@ public class PrefetchEngine {
 
     private final Map<String, Long> prefetchHistory = new ConcurrentHashMap<>();
     private final AtomicInteger prefetchCount = new AtomicInteger(0);
+
+    // ✅ Constructor injection (THIS WAS MISSING)
+    public PrefetchEngine(CacheStore cache) {
+        this.cache = cache;
+    }
 
     public void prefetch(String key) {
 
@@ -43,12 +50,17 @@ public class PrefetchEngine {
         }
 
         try {
-            rest.getForObject(
+            String data = rest.getForObject(
                     originBaseUrl + "/content?id=" + key,
                     String.class
             );
+
+            // ✅ THIS IS THE CRITICAL LINE
+            cache.put(key, data);
+
             prefetchHistory.put(key, now);
             System.out.println("🚀 PREFETCHED -> " + key);
+
         } catch (Exception ignored) {}
     }
 

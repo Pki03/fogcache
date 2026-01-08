@@ -1,7 +1,9 @@
 package com.fogcache.edge_server.replication;
 
 import com.fogcache.edge_server.ml.PredictionResult;
+import com.fogcache.edge_server.prefetch.PrefetchEngine;
 import com.fogcache.edge_server.routing.RoutingService;
+import com.fogcache.edge_server.metrics.HotKeyTracker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +17,13 @@ public class AdaptivePlacementEngine {
 
     private final ReplicationService replicationService;
     private final RoutingService routingService;
+    private final PrefetchEngine prefetchEngine;
+    private final HotKeyTracker hotKeyTracker;
 
-    // ✅ Decision memory
+    // 🧠 ML decision memory
     private final Map<String, DecisionState> decisionMemory = new ConcurrentHashMap<>();
 
-    // ✅ Config-driven controls (Day 23)
+    // 🔒 Guardrails
     @Value("${fogcache.ml.decision-cooldown-ms}")
     private long decisionCooldownMs;
 
@@ -28,68 +32,85 @@ public class AdaptivePlacementEngine {
 
     public AdaptivePlacementEngine(
             ReplicationService replicationService,
-            RoutingService routingService
+            RoutingService routingService,
+            PrefetchEngine prefetchEngine,
+            HotKeyTracker hotKeyTracker
     ) {
         this.replicationService = replicationService;
         this.routingService = routingService;
+        this.prefetchEngine = prefetchEngine;
+        this.hotKeyTracker = hotKeyTracker;
     }
 
-    // ✅ ML handling
-    public void apply(String key, String value, PredictionResult p) {
+    public void apply(
+            String key,
+            String value,
+            PredictionResult prediction,
+            String currentNode
+    ) {
 
         // 1️⃣ Confidence gate
-        if (p.getConfidence() < confidenceThreshold) {
-            System.out.println(
-                    "🧠 ML ignored (low confidence: " + p.getConfidence() + ") for key=" + key
-            );
+        if (prediction.getConfidence() < confidenceThreshold) {
+            return;
+        }
+
+        // 🔥 TRAFFIC PRIORITY RULE
+        // If traffic already marked key as HOT, ML cannot cap it as WARM
+        if ("WARM".equals(prediction.getClazz()) && hotKeyTracker.isHot(key)) {
             return;
         }
 
         long now = System.currentTimeMillis();
-
-        // 2️⃣ Anti-flapping via decision memory
         DecisionState prev = decisionMemory.get(key);
 
-        if (prev != null) {
-
-            // Same class → no-op
-            if (prev.getLastClass().equals(p.getClazz())) {
-                return;
-            }
-
-            // Cooldown active → no-op
-            if (now - prev.getLastUpdated() < decisionCooldownMs) {
-                System.out.println("⏸ Cooldown active for key=" + key);
-                return;
-            }
+        // 🚫 Prevent HOT downgrade
+        if (prev != null &&
+                "HOT".equals(prev.getLastClass()) &&
+                !"HOT".equals(prediction.getClazz())) {
+            return;
         }
 
-        // 3️⃣ Update decision memory
-        decisionMemory.putIfAbsent(key, new DecisionState(p.getClazz(), now));
-        decisionMemory.get(key).update(p.getClazz());
+        // ⏸ Cooldown
+        if (prev != null && now - prev.getLastUpdated() < decisionCooldownMs) {
+            return;
+        }
 
-        // 4️⃣ Replication decision
-        List<String> nodes = routingService.getHealthyNodes();
+        // 🔁 Idempotency (same class → no action)
+        if (prev != null && prev.getLastClass().equals(prediction.getClazz())) {
+            prev.touch(now);
+            return;
+        }
 
-        switch (p.getClazz()) {
+        // 🧠 Persist new decision
+        decisionMemory.put(key, new DecisionState(prediction.getClazz(), now));
+
+        // 🎯 Healthy targets (exclude self)
+        List<String> targets = routingService.getHealthyNodes()
+                .stream()
+                .filter(n -> !n.equals(currentNode))
+                .collect(Collectors.toList());
+
+        // 2️⃣ Execute ML decision
+        switch (prediction.getClazz()) {
 
             case "HOT" -> {
-                System.out.println("🔥 HOT key -> replicate to all: " + key);
-                replicationService.replicateToAll(nodes, key, value);
+                System.out.println("🔥 ML HOT → replicate + prefetch: " + key);
+                replicationService.replicateToAll(targets, key, value);
+                prefetchEngine.prefetch(key + "-next");
             }
 
             case "WARM" -> {
-                System.out.println("♨️ WARM key -> replicate to neighbors: " + key);
-                replicationService.replicateToNeighbors(nodes, key, value);
+                System.out.println("♨️ ML WARM → prefetch only: " + key);
+                prefetchEngine.prefetch(key + "-next");
             }
 
-            default -> {
-                // COLD → no replication
+            case "COLD" -> {
+                System.out.println("❄️ ML COLD → no action: " + key);
             }
         }
     }
 
-    // ✅ Day 22: ML decision snapshot (read-only)
+    // 🔍 Admin / observability (Phase 22-ready)
     public Map<String, String> decisionSnapshot() {
         return decisionMemory.entrySet()
                 .stream()

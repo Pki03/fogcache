@@ -10,6 +10,9 @@ def health():
 def predict():
     data = request.get_json(force=True)
 
+    print("ML received:", data)
+
+
     count = data.get("count", 0)
     access_rate = data.get("accessRate", 0)
 

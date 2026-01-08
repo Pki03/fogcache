@@ -1,5 +1,6 @@
 package com.fogcache.edge_server.routing;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -8,10 +9,13 @@ import java.util.List;
 public class RoutingService {
 
     /**
-     * Day 24: Docker-safe, static routing.
-     * No env, no ports, no external dependencies.
+     * Absolute URLs of all edge nodes in the cluster.
+     * Provided by environment (local / docker / k8s).
      */
+    @Value("${fogcache.cluster.nodes}")
+    private List<String> clusterNodes;
+
     public List<String> getHealthyNodes() {
-        return List.of("self");
+        return clusterNodes;
     }
 }

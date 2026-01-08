@@ -1,20 +1,17 @@
 package com.fogcache.load_balancer.controller;
 
-import com.fogcache.load_balancer.cluster.NodeRegistry;
+import com.fogcache.load_balancer.hashing.HashRing;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 public class LBController {
 
-    private final NodeRegistry registry;
+    private final HashRing hashRing;
     private final RestTemplate rest = new RestTemplate();
 
-    public LBController(NodeRegistry registry) {
-        this.registry = registry;
+    public LBController(HashRing hashRing) {
+        this.hashRing = hashRing;
     }
 
     @GetMapping("/content")
@@ -22,34 +19,18 @@ public class LBController {
 
         System.out.println("🔵 [LB] Incoming request id=" + id);
 
-        List<String> nodes = registry.getHealthyNodes();
+        // 🔑 THIS IS THE KEY LINE — consistent hashing
+        String node = hashRing.getNode(id);
 
-        System.out.println("📋 [LB] Healthy nodes = " + nodes);
+        System.out.println("🟢 [LB] HashRing selected node=" + node);
 
-        if (nodes.isEmpty()) {
-            throw new RuntimeException("No healthy nodes available");
-        }
+        String response = rest.getForObject(
+                node + "/content?id=" + id,
+                String.class
+        );
 
-        for (String node : nodes) {
-            try {
-                System.out.println("🟢 [LB] Routing id=" + id + " to " + node);
+        System.out.println("🟣 [LB] Response received from " + node);
 
-                String response = rest.getForObject(
-                        node + "/content?id=" + id,
-                        String.class
-                );
-
-                System.out.println("🟣 [LB] Success from " + node);
-
-                return response;
-
-            } catch (Exception e) {
-                System.out.println("⚠️ [LB] Failed node: " + node + " — marking DOWN");
-                registry.markDown(node);
-            }
-        }
-
-        throw new RuntimeException("All nodes failed");
+        return response;
     }
-
 }

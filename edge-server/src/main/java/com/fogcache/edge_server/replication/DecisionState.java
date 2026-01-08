@@ -2,8 +2,8 @@ package com.fogcache.edge_server.replication;
 
 public class DecisionState {
 
-    private String lastClass;   // HOT / WARM / COLD
-    private long lastUpdated;   // timestamp
+    private volatile String lastClass;
+    private volatile long lastUpdated;
 
     public DecisionState(String lastClass, long lastUpdated) {
         this.lastClass = lastClass;
@@ -18,8 +18,12 @@ public class DecisionState {
         return lastUpdated;
     }
 
-    public void update(String newClass) {
+    public void update(String newClass, long now) {
         this.lastClass = newClass;
-        this.lastUpdated = System.currentTimeMillis();
+        this.lastUpdated = now;
+    }
+
+    public void touch(long now) {
+        this.lastUpdated = now;
     }
 }

@@ -1,5 +1,6 @@
 package com.fogcache.edge_server.admin;
 
+import com.fogcache.edge_server.metrics.EdgeMetrics;
 import com.fogcache.edge_server.metrics.HotKeyTracker;
 import com.fogcache.edge_server.replication.AdaptivePlacementEngine;
 import com.fogcache.edge_server.routing.RoutingService;
@@ -17,18 +18,21 @@ public class AdminController {
     private final RoutingService routingService;
     private final HotKeyTracker hotKeyTracker;
     private final AdaptivePlacementEngine placementEngine;
+    private final EdgeMetrics metrics;
 
     public AdminController(
             RoutingService routingService,
             HotKeyTracker hotKeyTracker,
-            AdaptivePlacementEngine placementEngine
+            AdaptivePlacementEngine placementEngine,
+            EdgeMetrics metrics
     ) {
         this.routingService = routingService;
         this.hotKeyTracker = hotKeyTracker;
         this.placementEngine = placementEngine;
+        this.metrics = metrics;
     }
 
-    // ✅ Cluster nodes
+    // ✅ Cluster nodes (read-only)
     @GetMapping("/nodes")
     public List<String> nodes() {
         return routingService.getHealthyNodes();
@@ -40,9 +44,15 @@ public class AdminController {
         return hotKeyTracker.snapshot();
     }
 
-    // ✅ ML decision visibility (Day 22 Step 4)
+    // ✅ ML decision visibility
     @GetMapping("/ml/decisions")
     public Map<String, String> mlDecisions() {
         return placementEngine.decisionSnapshot();
+    }
+
+    // ✅ Metrics visibility (Phase 22 requirement)
+    @GetMapping("/metrics")
+    public Map<String, Object> metrics() {
+        return metrics.snapshot();
     }
 }
