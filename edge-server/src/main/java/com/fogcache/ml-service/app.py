@@ -2,26 +2,35 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/")
+# Health endpoint
+@app.route("/health")
 def health():
-    return "ML Service OK", 200
+    return jsonify({"status": "ok"})
 
-@app.route("/predict", methods=["POST"])
-def predict():
+# Main ML decision endpoint
+@app.route("/decide", methods=["POST"])
+def decide():
     data = request.get_json(force=True)
 
     print("ML received:", data)
 
+    key = data.get("key")
+    count = data.get("requests", 0)
+    latency = data.get("latency", 0)
 
-    count = data.get("count", 0)
-    access_rate = data.get("accessRate", 0)
-
-    if count > 100 and access_rate > 20:
-        return jsonify({"clazz": "HOT", "confidence": 0.9})
+    # Simple intelligent policy
+    if count > 100 and latency > 100:
+        decision = "replicate"
     elif count > 30:
-        return jsonify({"clazz": "WARM", "confidence": 0.7})
+        decision = "prefetch"
     else:
-        return jsonify({"clazz": "COLD", "confidence": 0.4})
+        decision = "normal"
+
+    return jsonify({
+        "key": key,
+        "decision": decision,
+        "confidence": round(min(1.0, (count / 150) + (latency / 200)), 2)
+    })
 
 if __name__ == "__main__":
     app.run(port=5001)
