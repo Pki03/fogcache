@@ -1,16 +1,22 @@
-version: "3.9"
-
 services:
   origin-server:
-    image: fogcache-origin
+    build:
+      context: ./origin-server
+      dockerfile: Dockerfile
     container_name: fogcache-origin
     ports:
       - "8081:8080"
 
+
   edge-server:
-    image: fogcache-edge
+    build:
+      context: ./edge-server
+      dockerfile: Dockerfile
     container_name: fogcache-edge
     ports:
       - "8083:8080"
+    environment:
+      - fogcache.cluster.nodes=http://fogcache-edge:8080
+      - fogcache.origin.base-url=http://fogcache-origin:8080
     depends_on:
       - origin-server
