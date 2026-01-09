@@ -1,4 +1,9 @@
+You got it.
+Below is the **complete, fully updated, copy-paste-ready README** with the **large, zoomable, professional architecture section** integrated properly.
 
+You can replace your entire `README.md` with this.
+
+---
 
 # 🌫️ **FogCache — Intelligent Distributed CDN System**
 
@@ -60,11 +65,35 @@ FogCache was developed using a **production-first engineering methodology**:
 | **Metrics Engine**      | Records latency, hits, misses, errors             |
 | **Admin APIs**          | Exposes system observability                      |
 
+---
 
-🧭 System Architecture
-Click the diagram to open it in full resolution.
-You can zoom, pan, and explore all system components clearly.
-<p align="center"> <a href="docs/fogcache_flow.drawio.png"> <img src="docs/fogcache_flow.drawio.png" width="900" alt="FogCache Architecture Diagram"/> </a> </p>
+## 🧭 System Architecture
+
+> **Click the image to open it in full size.**
+> Use your mouse / trackpad to zoom and scroll in the viewer.
+
+<p align="center">
+  <a href="docs/fogcache_flow.drawio.png">
+    <img src="docs/fogcache_flow.drawio.png" style="max-width: 1200px; width: 100%;" alt="FogCache Architecture Diagram"/>
+  </a>
+</p>
+
+<details>
+<summary>🧩 Why this diagram matters</summary>
+
+This architecture illustrates the complete FogCache pipeline:
+
+* Client → Load Balancer → Edge Servers
+* Edge Cache with LRU/LFU eviction
+* Hot-Key detection & adaptive replication
+* Prefetching & ML-based placement
+* Pattern analysis & feature extraction
+* Metrics, Admin APIs & observability
+* Origin shielding & automatic recovery
+
+The design represents a real-world **CDN + intelligent control plane**.
+
+</details>
 
 ---
 
@@ -92,20 +121,22 @@ FogCache was validated through **27 structured testing phases**, covering correc
 
 ### 🧱 Phases 1–4: Core Correctness
 
-* **Objective:** Validate basic caching, eviction, origin correctness
-* **Tests:** HIT/MISS validation, LRU/LFU eviction
+* HIT/MISS validation
+* LRU/LFU eviction correctness
+* Origin consistency
 * **Result:** All correctness constraints satisfied
 
 ### 🌐 Phases 5–7: Distribution & Observability
 
-* **Objective:** Load balancing, failover, metrics
-* **Tools:** curl, custom health checks
-* **Result:** Deterministic routing, per-edge isolation
+* Load balancing
+* Failover validation
+* Per-edge metrics isolation
+* **Result:** Deterministic routing & observability verified
 
 ### ⚡ Phase 8: Stress & Throughput
 
 * **Tool:** ApacheBench
-* **Result:**
+* **Results:**
 
   * **2000+ RPS**
   * **99% cache hit ratio**
@@ -113,58 +144,45 @@ FogCache was validated through **27 structured testing phases**, covering correc
 
 ### 🧬 Phases 9–13: Replication & Concurrency
 
-* **Objective:** Replication correctness, stampede prevention
-* **Result:**
-
-  * Single origin call under 50 concurrent requests
-  * Durable cross-edge cache state
+* Replication correctness
+* Cache stampede prevention
+* **Result:** Single origin call under 50 concurrent requests
 
 ### 🧯 Phase 14: Chaos Engineering
 
-* **Objective:** Random node failure survival
-* **Result:**
-
-  * Zero downtime
-  * Automatic recovery
-  * No data loss
+* Random node failures
+* Zero downtime
+* Automatic recovery
 
 ### 📊 Phases 15–16: Observability & Analytics
 
-* **Objective:** Metrics & pattern correctness
-* **Result:** Real-time analytics validated
+* Real-time pattern extraction
+* Metrics correctness
 
 ### 🧠 Phases 17–19: Intelligence & ML
 
-* **Objective:** Predictive prefetching & ML-driven placement
-* **Result:**
-
-  * Java → Python ML pipeline verified
-  * Adaptive replication & prefetching
+* Java → Python ML pipeline
+* Adaptive placement & predictive prefetching
 
 ### 🧯 Phase 20: Quorum & Fault-Tolerant Replication
 
-* **Result:** Survived partial failures with no outage
+* Survived partial failures with no outage
 
 ### 🧩 Phase 24: Docker Deployment
 
-* **Objective:** Production-style deployment
-* **Result:**
+* DNS service discovery
+* End-to-end correctness in containers
 
-  * DNS service discovery validated
-  * End-to-end correctness in containers
+### 🧪 Phase 27: Final Regression
 
-### 🧪 Final Regression (Phase 27)
-
-* **Result:**
-
-  * **100% test pass**
-  * Production-grade system stability
+* **100% test pass**
+* Production-grade system stability
 
 ---
 
 ## 🏆 6. Results Achieved
 
-* **Latency reduction:** ~4× improvement
+* **Latency reduction:** ~4×
 * **Cache hit ratio:** ~99%
 * **Throughput:** 2000+ RPS
 * **Origin load reduction:** >95%
@@ -232,3 +250,6 @@ curl http://localhost:8083/admin/ml/decisions
 * Distributed systems & CDN research
 * Open-source community
 
+---
+
+If you'd like, next we can convert this into a **resume project description** or an **interview-ready explanation**.
