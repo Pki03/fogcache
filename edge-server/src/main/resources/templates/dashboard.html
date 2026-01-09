@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FogCache Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<h1>FogCache Live Dashboard</h1>
+
+<div class="grid">
+    <div class="card">
+        <h2>System Metrics</h2>
+        <div id="metrics"></div>
+    </div>
+
+    <div class="card">
+        <h2>Cache Stats</h2>
+        <canvas id="cacheChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Hot Keys</h2>
+        <div id="hotkeys"></div>
+    </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
