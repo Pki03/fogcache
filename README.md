@@ -60,6 +60,12 @@ FogCache was developed using a **production-first engineering methodology**:
 | **Metrics Engine**      | Records latency, hits, misses, errors             |
 | **Admin APIs**          | Exposes system observability                      |
 
+
+🧭 System Architecture
+Click the diagram to open it in full resolution.
+You can zoom, pan, and explore all system components clearly.
+<p align="center"> <a href="docs/fogcache_flow.drawio.png"> <img src="docs/fogcache_flow.drawio.png" width="900" alt="FogCache Architecture Diagram"/> </a> </p>
+
 ---
 
 ## 📤 4. Outputs of Each Service
