@@ -31,7 +31,7 @@ public class EdgeController {
     private final AdaptiveReplicationManager adaptiveManager;
     private final RequestLogger requestLogger;
     private final EdgeMetrics metrics;
-    private final HotKeyTracker hotKeyTracker;   // ✅ NEW
+    private final HotKeyTracker hotKeyTracker;
 
     private final TokenBucketRateLimiter rateLimiter = new TokenBucketRateLimiter();
     private final ConcurrentHashMap<String, Object> locks = new ConcurrentHashMap<>();
@@ -42,7 +42,6 @@ public class EdgeController {
     @Value("${fogcache.origin.base-url}")
     private String originBaseUrl;
 
-    // ✅ SINGLE, CORRECT CONSTRUCTOR
     public EdgeController(
             ReplicationService replicationService,
             AdaptiveReplicationManager adaptiveManager,
@@ -50,7 +49,7 @@ public class EdgeController {
             CacheStore cache,
             PatternAnalyzer analyzer,
             EdgeMetrics metrics,
-            HotKeyTracker hotKeyTracker,     // ✅ NEW
+            HotKeyTracker hotKeyTracker,
             Environment env
     ) {
         this.replicationService = replicationService;
@@ -65,74 +64,45 @@ public class EdgeController {
         this.CURRENT_NODE = "http://localhost:" + port;
     }
 
-    // ------------------- Utility Endpoints -------------------
-
     @GetMapping("/health")
     public String health() {
+        metrics.recordInternal();
         return "OK";
     }
-
-    @GetMapping("/dump")
-    public Map<String, String> dump() {
-        return cache.snapshot();
-    }
-
-    @GetMapping("/logs")
-    public List<RequestLog> getLogs() {
-        return requestLogger.getLogs();
-    }
-
-    @GetMapping("/patterns")
-    public List<RequestPattern> patterns() {
-        return analyzer.analyze();
-    }
-
-    @PostMapping("/warmup")
-    public void warmup(@RequestBody Map<String, String> data) {
-        data.forEach(cache::put);
-        System.out.println("Warmup completed: " + data.size());
-    }
-
-    @PostMapping("/replicate")
-    public String replicate(@RequestBody ReplicationRequest req) {
-        cache.put(req.getKey(), req.getValue());
-        System.out.println("REPLICATED -> " + req.getKey());
-        return "OK";
-    }
-
-    // ------------------- Core CDN Endpoint -------------------
 
     @GetMapping("/content")
     public String getContent(@RequestParam String id, HttpServletRequest request) {
+
+        boolean isInternal = "true".equalsIgnoreCase(request.getHeader("X-FogCache-Internal"));
 
         long start = System.currentTimeMillis();
         boolean hit = false;
         String result;
 
-        metrics.totalRequests.incrementAndGet();
+        if (isInternal) metrics.recordInternal();
+        else metrics.recordExternal();
 
         try {
             if (!rateLimiter.allowRequest(id)) {
                 result = "429: Too Many Requests";
-                metrics.errors.incrementAndGet();
+                if (!isInternal) metrics.errors.incrementAndGet();
             } else {
                 Object lock = locks.computeIfAbsent(id, k -> new Object());
-
                 synchronized (lock) {
 
-                    // 🔥 CRITICAL FIX — ALWAYS record traffic
-                    hotKeyTracker.record(id);
+                    hotKeyTracker.record(id, !isInternal);
 
                     String cached = cache.get(id);
-
                     if (cached != null) {
                         hit = true;
-                        metrics.cacheHits.incrementAndGet();
+                        if (!isInternal) metrics.cacheHits.incrementAndGet();
                         adaptiveManager.onAccess(CURRENT_NODE, id, cached);
                         result = cached;
                     } else {
-                        metrics.cacheMisses.incrementAndGet();
-                        metrics.originCalls.incrementAndGet();
+                        if (!isInternal) {
+                            metrics.cacheMisses.incrementAndGet();
+                            metrics.originCalls.incrementAndGet();
+                        }
 
                         String data = restTemplate.getForObject(
                                 originBaseUrl + "/content?id=" + id,
@@ -146,15 +116,14 @@ public class EdgeController {
                 }
             }
         } catch (Exception e) {
-            metrics.errors.incrementAndGet();
+            if (!isInternal) metrics.errors.incrementAndGet();
             result = "ERROR";
         }
 
         long latency = System.currentTimeMillis() - start;
-        metrics.totalLatencyMs.addAndGet(latency);
+        if (!isInternal) metrics.totalLatencyMs.addAndGet(latency);
 
         requestLogger.log(id, CURRENT_NODE, hit, latency, result);
-
         return result;
     }
 }

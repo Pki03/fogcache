@@ -14,10 +14,13 @@ public class HotKeyTracker {
 
     private final ConcurrentHashMap<String, AtomicInteger> counter = new ConcurrentHashMap<>();
 
-    public boolean record(String key) {
+    public boolean record(String key, boolean isExternalRequest) {
+        if (!isExternalRequest) return false;
+
         int count = counter
                 .computeIfAbsent(key, k -> new AtomicInteger())
                 .incrementAndGet();
+
         return count >= HOT_THRESHOLD;
     }
 
@@ -25,7 +28,6 @@ public class HotKeyTracker {
         counter.remove(key);
     }
 
-    // ✅ Day 22: read-only admin visibility
     public Map<String, Integer> snapshot() {
         Map<String, Integer> snap = new HashMap<>();
         counter.forEach((k, v) -> snap.put(k, v.get()));
@@ -36,5 +38,4 @@ public class HotKeyTracker {
         AtomicInteger count = counter.get(key);
         return count != null && count.get() >= HOT_THRESHOLD;
     }
-
 }

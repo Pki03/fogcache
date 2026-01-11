@@ -17,13 +17,9 @@ public class MetricsController {
 
     @GetMapping("/metrics")
     public Map<String, Object> metrics() {
-        return Map.of(
-                "total_requests", metrics.totalRequests.get(),
-                "cache_hits", metrics.cacheHits.get(),
-                "cache_misses", metrics.cacheMisses.get(),
-                "origin_calls", metrics.originCalls.get(),
-                "errors", metrics.errors.get(),
-                "avg_latency_ms", metrics.avgLatencyMs()
-        );
+        metrics.recordInternal();
+        return metrics.snapshot();
     }
 }
+
+

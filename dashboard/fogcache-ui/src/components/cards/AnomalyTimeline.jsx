@@ -13,7 +13,7 @@ export default function AnomalyTimeline({ history }) {
 
     return (
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition">
-            <h2 className="text-white text-lg font-semibold mb-4">🧬 Incident Timeline</h2>
+            <h2 className="text-white text-lg font-semibold mb-4">Incident Timeline</h2>
 
             {anomalies.length === 0 && (
                 <div className="flex items-center gap-2 text-green-400 text-sm">

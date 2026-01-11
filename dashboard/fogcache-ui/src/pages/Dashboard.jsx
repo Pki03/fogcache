@@ -17,22 +17,38 @@ import TopBar from "../components/layout/TopBar";
 
 export default function Dashboard() {
     const [metrics, setMetrics] = useState({});
+    const [metricsByNode, setMetricsByNode] = useState({});
     const [hotKeys, setHotKeys] = useState({});
     const [nodes, setNodes] = useState([]);
     const [latencyHistory, setLatencyHistory] = useState([]);
     const [mlDecisions, setMlDecisions] = useState({});
 
     useEffect(() => {
+        let cancelled = false;
+
         const load = async () => {
-            const m = await getMetrics();
-            const h = await getHotKeys();
-            const n = await getNodes();
-            const d = await getMLDecisions();
+            if (cancelled) return;
+
+            const [m, h, n, d] = await Promise.all([
+                getMetrics(),
+                getHotKeys(),
+                getNodes(),
+                getMLDecisions()
+            ]);
+
+            if (cancelled) return;
 
             setMetrics(m.data);
             setHotKeys(h.data);
             setNodes(n.data);
             setMlDecisions(d.data);
+
+            // 🧠 Build per-node metrics map (order is preserved)
+            const perNode = {};
+            n.data.forEach((node, i) => {
+                perNode[node] = m.list?.[i] || {};
+            });
+            setMetricsByNode(perNode);
 
             setLatencyHistory(prev => [
                 ...prev.slice(-30),
@@ -42,7 +58,11 @@ export default function Dashboard() {
 
         load();
         const t = setInterval(load, 2000);
-        return () => clearInterval(t);
+
+        return () => {
+            cancelled = true;
+            clearInterval(t);
+        };
     }, []);
 
     let systemStatus = "Healthy";
@@ -59,53 +79,34 @@ export default function Dashboard() {
             >
                 <TopBar status={systemStatus} />
 
-                {/* System Metrics */}
                 <section className="space-y-4">
                     <h2 className="text-xl font-semibold text-white">System Metrics</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                        <MetricCard title="Requests" value={metrics.total_requests} />
+                        <MetricCard title="Requests" value={metrics.external_requests} />
                         <MetricCard title="Cache Hits" value={metrics.cache_hits} />
                         <MetricCard title="Misses" value={metrics.cache_misses} />
                         <MetricCard title="Latency (ms)" value={metrics.avg_latency_ms} />
                     </div>
                 </section>
 
-                {/* Latency */}
-                <motion.section
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    viewport={{ once: true }}
-                >
-                    <LatencyChart data={latencyHistory} />
-                </motion.section>
+                <LatencyChart data={latencyHistory} />
 
-                {/* Alerts */}
-                <motion.section
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    viewport={{ once: true }}
-                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-                >
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <AlertsPanel metrics={metrics} />
                     <RootCausePanel metrics={metrics} />
-                </motion.section>
+                </section>
 
-                {/* Incident Timeline */}
                 <AnomalyTimeline history={latencyHistory} />
 
-                {/* Intelligence */}
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <HotKeysCard data={hotKeys} />
                     <HotKeyHeatmap data={hotKeys} />
                     <MLDecisions decisions={mlDecisions} />
                 </section>
 
-                {/* Infrastructure */}
                 <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <NodesCard nodes={nodes} metrics={metrics} />
-                    <EdgeAnalytics nodes={nodes} metrics={metrics} />
+                    <EdgeAnalytics nodes={nodes} metricsByNode={metricsByNode} />
                 </section>
             </motion.div>
         </div>

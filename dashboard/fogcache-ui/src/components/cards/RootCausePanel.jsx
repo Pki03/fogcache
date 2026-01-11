@@ -19,7 +19,7 @@ export default function RootCausePanel({ metrics }) {
 
     return (
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition">
-            <h2 className="text-white text-lg font-semibold mb-3">🧠 Root Cause Analysis</h2>
+            <h2 className="text-white text-lg font-semibold mb-3">Root Cause Analysis</h2>
 
             <div
                 className={`inline-block px-4 py-2 rounded-xl bg-white/5 border border-white/10 ${glow}`}

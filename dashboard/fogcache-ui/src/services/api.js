@@ -23,15 +23,18 @@ const aggregate = async (path) => {
 };
 
 export const getMetrics = async () => {
-    const list = await aggregate("/admin/metrics");
+    const list = await aggregate("/metrics");
 
     return {
         data: {
-            total_requests: list.reduce((a, b) => a + b.total_requests, 0),
+            external_requests: list.reduce((a, b) => a + b.external_requests, 0),
+            internal_requests: list.reduce((a, b) => a + b.internal_requests, 0),
+
             cache_hits: list.reduce((a, b) => a + b.cache_hits, 0),
             cache_misses: list.reduce((a, b) => a + b.cache_misses, 0),
             errors: list.reduce((a, b) => a + b.errors, 0),
             origin_calls: list.reduce((a, b) => a + b.origin_calls, 0),
+
             avg_latency_ms:
                 list.length === 0
                     ? 0
@@ -41,6 +44,7 @@ export const getMetrics = async () => {
         }
     };
 };
+
 
 export const getHotKeys = async () => {
     const list = await aggregate("/admin/hotkeys");

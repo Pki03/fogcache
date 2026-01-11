@@ -1,7 +1,7 @@
 export default function HotKeysCard({ data }) {
     return (
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition">
-            <h3 className="text-white text-lg font-semibold mb-4">🔥 Hot Keys</h3>
+            <h3 className="text-white text-lg font-semibold mb-4">Hot Keys</h3>
 
             <div className="space-y-3">
                 {Object.entries(data).map(([key, count]) => (

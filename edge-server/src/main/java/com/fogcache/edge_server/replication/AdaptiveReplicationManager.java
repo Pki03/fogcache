@@ -36,7 +36,8 @@ public class AdaptiveReplicationManager {
         // 🚨 Phase 19 rule: ML overrides rule-based logic
         if (mlEnabled) return;
 
-        boolean hot = tracker.record(key);
+        // 🧠 Replication is internal traffic → must NOT influence hot-key stats
+        boolean hot = tracker.record(key, false);
         if (!hot) return;
 
         long now = System.currentTimeMillis();

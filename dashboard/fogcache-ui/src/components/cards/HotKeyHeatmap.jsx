@@ -4,7 +4,7 @@ export default function HotKeyHeatmap({ data }) {
     return (
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl hover:shadow-3xl transition">
             <h2 className="text-white text-lg font-semibold mb-4">
-                🔥 Hot-Key Activity
+                Hot-Key Activity
             </h2>
 
             <div className="grid grid-cols-3 gap-3">

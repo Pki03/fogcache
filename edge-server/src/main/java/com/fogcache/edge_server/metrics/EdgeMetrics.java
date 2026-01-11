@@ -8,22 +8,44 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class EdgeMetrics {
 
-    public final AtomicLong totalRequests = new AtomicLong();
+    private final AtomicLong externalRequests = new AtomicLong();
+    private final AtomicLong internalRequests = new AtomicLong();
+
     public final AtomicLong cacheHits = new AtomicLong();
     public final AtomicLong cacheMisses = new AtomicLong();
     public final AtomicLong originCalls = new AtomicLong();
     public final AtomicLong errors = new AtomicLong();
     public final AtomicLong totalLatencyMs = new AtomicLong();
 
+    // ---- Recording ----
+
+    public void recordExternal() {
+        externalRequests.incrementAndGet();
+    }
+
+    public void recordInternal() {
+        internalRequests.incrementAndGet();
+    }
+
+    public long getExternalRequests() {
+        return externalRequests.get();
+    }
+
+    public long getInternalRequests() {
+        return internalRequests.get();
+    }
+
     public long avgLatencyMs() {
-        long count = totalRequests.get();
+        long count = externalRequests.get();
         return count == 0 ? 0 : totalLatencyMs.get() / count;
     }
 
-    // ✅ ADD THIS
+    // ---- Snapshot for UI ----
+
     public Map<String, Object> snapshot() {
         return Map.of(
-                "total_requests", totalRequests.get(),
+                "external_requests", getExternalRequests(),
+                "internal_requests", getInternalRequests(),
                 "cache_hits", cacheHits.get(),
                 "cache_misses", cacheMisses.get(),
                 "origin_calls", originCalls.get(),

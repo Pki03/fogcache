@@ -12,7 +12,7 @@ export default function LatencyChart({ data }) {
     return (
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-white text-lg font-semibold">📈 Latency Trend</h2>
+                <h2 className="text-white text-lg font-semibold">Latency Trend</h2>
                 <span className="text-xs text-slate-400">last 60s</span>
             </div>
 
